@@ -36,7 +36,18 @@
       border-radius: 0.7rem; border: none;
     }
     button { background: #5a67d8; color: white; cursor: pointer; }
-    .note { background: #ffffff22; padding: 1rem; border-radius: 1rem; margin: 1rem 0; }
+    .note {
+      background: #ffffff22;
+      padding: 1rem;
+      border-radius: 1rem;
+      margin: 1rem 0;
+      text-align: left;
+    }
+    .note-actions {
+      margin-top: 0.5rem;
+      display: flex;
+      gap: 0.5rem;
+    }
   </style>
 </head>
 <body>
@@ -120,8 +131,13 @@
         const div = document.createElement("div");
         div.className = "note";
         div.innerHTML = `
-          <div>${note}</div>
-          <button onclick="deleteNote(${i})">🗑️ Delete</button>
+          <div id="note-text-${i}">${note}</div>
+          <textarea id="edit-text-${i}" style="display:none;">${note}</textarea>
+          <div class="note-actions">
+            <button onclick="editNote(${i})" id="edit-btn-${i}">📝 Edit</button>
+            <button onclick="saveEdit(${i})" id="save-btn-${i}" style="display:none;">💾 Save</button>
+            <button onclick="deleteNote(${i})">🗑️ Delete</button>
+          </div>
         `;
         container.appendChild(div);
       });
@@ -130,6 +146,21 @@
     function deleteNote(index) {
       const notes = JSON.parse(localStorage.getItem("mystic-notes") || "[]");
       notes.splice(index, 1);
+      localStorage.setItem("mystic-notes", JSON.stringify(notes));
+      showNotes();
+    }
+
+    function editNote(i) {
+      document.getElementById(`note-text-${i}`).style.display = "none";
+      document.getElementById(`edit-text-${i}`).style.display = "block";
+      document.getElementById(`edit-btn-${i}`).style.display = "none";
+      document.getElementById(`save-btn-${i}`).style.display = "inline-block";
+    }
+
+    function saveEdit(i) {
+      const newText = document.getElementById(`edit-text-${i}`).value.trim();
+      const notes = JSON.parse(localStorage.getItem("mystic-notes") || "[]");
+      notes[i] = newText;
       localStorage.setItem("mystic-notes", JSON.stringify(notes));
       showNotes();
     }
