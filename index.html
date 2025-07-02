@@ -4,137 +4,182 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>MysticVault 🔐</title>
-  <link rel="icon" href="icon-192.png">
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="icon-192.png" />
   <style>
     * { box-sizing: border-box; }
     body {
       font-family: 'Segoe UI', sans-serif;
-      background: linear-gradient(to right, #1f1c2c, #928dab);
+      margin: 0; padding: 2rem;
+      background: linear-gradient(to right, #0f2027, #203a43, #2c5364);
       color: white;
-      margin: 0;
-      padding: 2rem;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
+      text-align: center;
     }
-    h1 { font-size: 2rem; margin-bottom: 1rem; }
-    input, button, textarea {
-      padding: 0.8rem;
-      margin: 0.5rem 0;
-      border-radius: 0.5rem;
-      border: none;
-      font-size: 1rem;
-      width: 100%;
-      max-width: 300px;
+    h1 { font-size: 2.5rem; margin-bottom: 1rem; }
+    .vault, .fake-vault, .login {
+      max-width: 500px; margin: auto;
+      background: #ffffff11; padding: 2rem;
+      border-radius: 1rem;
+      margin-top: 2rem;
     }
     textarea {
-      height: 100px;
+      width: 100%; height: 150px;
+      margin: 1rem 0; padding: 1rem;
+      border-radius: 1rem;
+      border: none;
+      resize: none;
+      font-size: 1rem;
     }
-    button {
-      background: #6c5ce7;
-      color: white;
-      cursor: pointer;
+    input, button {
+      padding: 0.8rem; margin: 0.5rem;
+      font-size: 1rem;
+      border-radius: 0.7rem; border: none;
     }
-    .vault, .fake-vault, .real-vault, .note-item { max-width: 500px; width: 100%; }
-    .note-item {
-      background: #ffffff11;
-      padding: 1rem;
-      margin: 0.5rem 0;
-      border-radius: 0.5rem;
-    }
-    .hidden { display: none; }
-    #notes { margin-top: 1rem; }
+    button { background: #5a67d8; color: white; cursor: pointer; }
+    .note { background: #ffffff22; padding: 1rem; border-radius: 1rem; margin: 1rem 0; }
   </style>
 </head>
 <body>
-
-  <h1>MysticVault 🔐</h1>
-
-  <!-- Password Screen -->
-  <div class="vault" id="vault-screen">
-    <input type="password" id="vault-password" placeholder="Enter your password" />
-    <button onclick="unlockVault()">Unlock</button>
+  <h1>🔐 MysticVault</h1>
+  
+  <div class="login" id="login">
+    <input type="password" id="password-input" placeholder="Enter your password" />
+    <button onclick="login()">Unlock</button>
+    <button onclick="showRecovery()">Forgot Password?</button>
   </div>
 
-  <!-- Fake Vault -->
-  <div class="fake-vault hidden" id="fake-vault">
-    <h2>🧠 Fake Vault</h2>
-    <p>Wrong password! You can't guess it! 🤪</p>
-  </div>
-
-  <!-- Real Vault -->
-  <div class="real-vault hidden" id="real-vault">
-    <h2>📒 Your Secret Notes</h2>
-    <textarea id="note-input" placeholder="Write your secret note..."></textarea>
-    <button onclick="addNote()">Add Note</button>
+  <div class="vault" id="vault" style="display:none;">
+    <h2>🗂️ Your Secure Vault</h2>
+    <textarea id="note" placeholder="Write your note here..."></textarea><br>
+    <button onclick="saveNote()">Save Note</button>
     <div id="notes"></div>
+    <hr>
+    <h3>Change Password</h3>
+    <input type="password" id="old-pass" placeholder="Old Password"><br>
+    <input type="password" id="new-pass" placeholder="New Password"><br>
+    <input type="text" id="new-backup" placeholder="New Backup Keyword"><br>
+    <button onclick="changePassword()">Change Password</button><br><br>
+    <button onclick="resetVault()" style="background:red;">❌ Reset Vault</button>
+  </div>
+
+  <div class="fake-vault" id="fake" style="display:none;">
+    <h2>😜 Wrong password!</h2>
+    <p>You can't guess it! 🤪</p>
+  </div>
+
+  <div class="login" id="recovery" style="display:none;">
+    <input type="text" id="backup-input" placeholder="Enter your backup word" />
+    <button onclick="recoverPassword()">Recover Access</button>
+    <button onclick="cancelRecovery()">Cancel</button>
   </div>
 
   <script>
-    const vaultScreen = document.getElementById("vault-screen");
-    const fakeVault = document.getElementById("fake-vault");
-    const realVault = document.getElementById("real-vault");
-    const passwordInput = document.getElementById("vault-password");
-    const noteInput = document.getElementById("note-input");
-    const notesContainer = document.getElementById("notes");
-
     let password = localStorage.getItem("mystic-password");
-    let notes = JSON.parse(localStorage.getItem("mystic-notes")) || [];
+    let backup = localStorage.getItem("mystic-backup");
 
-    if (!password) {
-      password = prompt("Set your MysticVault password:");
-      if (password) localStorage.setItem("mystic-password", password);
+    if (!password || !backup) {
+      password = prompt("Set your new MysticVault password:");
+      backup = prompt("Set a backup word (for recovery):");
+      if (password && backup) {
+        localStorage.setItem("mystic-password", password);
+        localStorage.setItem("mystic-backup", backup);
+        alert("Password & backup word saved!");
+      } else {
+        alert("You must set both to continue.");
+        location.reload();
+      }
     }
 
-    function unlockVault() {
-      const entered = passwordInput.value;
+    function login() {
+      const entered = document.getElementById("password-input").value;
       if (entered === password) {
-        vaultScreen.classList.add("hidden");
-        realVault.classList.remove("hidden");
+        document.getElementById("login").style.display = "none";
+        document.getElementById("vault").style.display = "block";
         showNotes();
       } else {
-        vaultScreen.classList.add("hidden");
-        fakeVault.classList.remove("hidden");
+        document.getElementById("login").style.display = "none";
+        document.getElementById("fake").style.display = "block";
       }
     }
 
-    function addNote() {
-      const text = noteInput.value.trim();
-      if (text) {
-        notes.push(text);
-        localStorage.setItem("mystic-notes", JSON.stringify(notes));
-        noteInput.value = "";
-        showNotes();
-      }
+    function saveNote() {
+      const note = document.getElementById("note").value.trim();
+      if (!note) return;
+      const notes = JSON.parse(localStorage.getItem("mystic-notes") || "[]");
+      notes.push(note);
+      localStorage.setItem("mystic-notes", JSON.stringify(notes));
+      document.getElementById("note").value = "";
+      showNotes();
     }
 
     function showNotes() {
-      notesContainer.innerHTML = "";
-      notes.forEach((note, index) => {
+      const notes = JSON.parse(localStorage.getItem("mystic-notes") || "[]");
+      const container = document.getElementById("notes");
+      container.innerHTML = "";
+      notes.forEach((note, i) => {
         const div = document.createElement("div");
-        div.className = "note-item";
+        div.className = "note";
         div.innerHTML = `
-          <p>${note}</p>
-          <button onclick="editNote(${index})">Edit</button>
-          <button onclick="deleteNote(${index})">Delete</button>
+          <div>${note}</div>
+          <button onclick="deleteNote(${i})">🗑️ Delete</button>
         `;
-        notesContainer.appendChild(div);
+        container.appendChild(div);
       });
     }
 
     function deleteNote(index) {
+      const notes = JSON.parse(localStorage.getItem("mystic-notes") || "[]");
       notes.splice(index, 1);
       localStorage.setItem("mystic-notes", JSON.stringify(notes));
       showNotes();
     }
 
-    function editNote(index) {
-      const newText = prompt("Edit your note:", notes[index]);
-      if (newText !== null) {
-        notes[index] = newText;
-        localStorage.setItem("mystic-notes", JSON.stringify(notes));
-        showNotes();
+    function changePassword() {
+      const oldPass = document.getElementById("old-pass").value;
+      const newPass = document.getElementById("new-pass").value;
+      const newBackup = document.getElementById("new-backup").value;
+      if (oldPass === password && newPass && newBackup) {
+        localStorage.setItem("mystic-password", newPass);
+        localStorage.setItem("mystic-backup", newBackup);
+        password = newPass;
+        backup = newBackup;
+        alert("Password changed!");
+      } else {
+        alert("Wrong old password or empty new fields.");
       }
+    }
+
+    function resetVault() {
+      if (confirm("This will erase everything. Are you sure?")) {
+        localStorage.clear();
+        location.reload();
+      }
+    }
+
+    function showRecovery() {
+      document.getElementById("login").style.display = "none";
+      document.getElementById("recovery").style.display = "block";
+    }
+
+    function cancelRecovery() {
+      document.getElementById("recovery").style.display = "none";
+      document.getElementById("login").style.display = "block";
+    }
+
+    function recoverPassword() {
+      const entered = document.getElementById("backup-input").value;
+      if (entered === backup) {
+        alert("Access granted! Please set new password & backup.");
+        localStorage.removeItem("mystic-password");
+        localStorage.removeItem("mystic-backup");
+        location.reload();
+      } else {
+        alert("Wrong backup word!");
+      }
+    }
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('service-worker.js');
     }
   </script>
 </body>
