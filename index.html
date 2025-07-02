@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>MysticVault 🔐</title>
+  <link rel="icon" href="icon-192.png">
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(to right, #1f1c2c, #928dab);
+      color: white;
+      margin: 0;
+      padding: 2rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    h1 { font-size: 2rem; margin-bottom: 1rem; }
+    input, button, textarea {
+      padding: 0.8rem;
+      margin: 0.5rem 0;
+      border-radius: 0.5rem;
+      border: none;
+      font-size: 1rem;
+      width: 100%;
+      max-width: 300px;
+    }
+    textarea {
+      height: 100px;
+    }
+    button {
+      background: #6c5ce7;
+      color: white;
+      cursor: pointer;
+    }
+    .vault, .fake-vault, .real-vault, .note-item { max-width: 500px; width: 100%; }
+    .note-item {
+      background: #ffffff11;
+      padding: 1rem;
+      margin: 0.5rem 0;
+      border-radius: 0.5rem;
+    }
+    .hidden { display: none; }
+    #notes { margin-top: 1rem; }
+  </style>
+</head>
+<body>
+
+  <h1>MysticVault 🔐</h1>
+
+  <!-- Password Screen -->
+  <div class="vault" id="vault-screen">
+    <input type="password" id="vault-password" placeholder="Enter your password" />
+    <button onclick="unlockVault()">Unlock</button>
+  </div>
+
+  <!-- Fake Vault -->
+  <div class="fake-vault hidden" id="fake-vault">
+    <h2>🧠 Fake Vault</h2>
+    <p>Wrong password! You can't guess it! 🤪</p>
+  </div>
+
+  <!-- Real Vault -->
+  <div class="real-vault hidden" id="real-vault">
+    <h2>📒 Your Secret Notes</h2>
+    <textarea id="note-input" placeholder="Write your secret note..."></textarea>
+    <button onclick="addNote()">Add Note</button>
+    <div id="notes"></div>
+  </div>
+
+  <script>
+    const vaultScreen = document.getElementById("vault-screen");
+    const fakeVault = document.getElementById("fake-vault");
+    const realVault = document.getElementById("real-vault");
+    const passwordInput = document.getElementById("vault-password");
+    const noteInput = document.getElementById("note-input");
+    const notesContainer = document.getElementById("notes");
+
+    let password = localStorage.getItem("mystic-password");
+    let notes = JSON.parse(localStorage.getItem("mystic-notes")) || [];
+
+    if (!password) {
+      password = prompt("Set your MysticVault password:");
+      if (password) localStorage.setItem("mystic-password", password);
+    }
+
+    function unlockVault() {
+      const entered = passwordInput.value;
+      if (entered === password) {
+        vaultScreen.classList.add("hidden");
+        realVault.classList.remove("hidden");
+        showNotes();
+      } else {
+        vaultScreen.classList.add("hidden");
+        fakeVault.classList.remove("hidden");
+      }
+    }
+
+    function addNote() {
+      const text = noteInput.value.trim();
+      if (text) {
+        notes.push(text);
+        localStorage.setItem("mystic-notes", JSON.stringify(notes));
+        noteInput.value = "";
+        showNotes();
+      }
+    }
+
+    function showNotes() {
+      notesContainer.innerHTML = "";
+      notes.forEach((note, index) => {
+        const div = document.createElement("div");
+        div.className = "note-item";
+        div.innerHTML = `
+          <p>${note}</p>
+          <button onclick="editNote(${index})">Edit</button>
+          <button onclick="deleteNote(${index})">Delete</button>
+        `;
+        notesContainer.appendChild(div);
+      });
+    }
+
+    function deleteNote(index) {
+      notes.splice(index, 1);
+      localStorage.setItem("mystic-notes", JSON.stringify(notes));
+      showNotes();
+    }
+
+    function editNote(index) {
+      const newText = prompt("Edit your note:", notes[index]);
+      if (newText !== null) {
+        notes[index] = newText;
+        localStorage.setItem("mystic-notes", JSON.stringify(notes));
+        showNotes();
+      }
+    }
+  </script>
+</body>
+</html>
